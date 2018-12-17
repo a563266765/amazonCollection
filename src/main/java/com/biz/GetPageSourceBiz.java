@@ -1,29 +1,29 @@
 package com.biz;
 
 import com.common.utils.DateUtil;
-import com.dto.CommodityDTO;
+import com.control.BaseInstructControl;
+import com.instruct.BaseInstruct;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
-import org.jsoup.select.Elements;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
-import java.io.*;
-import java.math.BigDecimal;
-import java.net.HttpURLConnection;
-import java.net.URL;
-import java.net.URLEncoder;
-import java.util.*;
-import java.util.regex.Matcher;
-import java.util.regex.Pattern;
+
+import java.io.BufferedReader;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.InputStreamReader;
 
 @Service
 public class GetPageSourceBiz {
 
 	@Autowired
-	private ExcelExportBiz excelExportServlet;
+	private CommodityInstruct excelExportServlet;
 
-	private GetPageSourceBiz(){}
+	@Autowired
+	private BaseInstructControl baseInstructControl;
+
+	public GetPageSourceBiz(){}
 	public void pageSource() {
 
 		try {
@@ -35,14 +35,14 @@ public class GetPageSourceBiz {
 			if (file.isFile() && file.exists()) {
 				InputStreamReader isr = new InputStreamReader(new FileInputStream(file), "utf-8");
 				BufferedReader br = new BufferedReader(isr);
-				String lineTxt = null;
+				String lineTxt;
 				int lineSize = 1;
 				while ((lineTxt = br.readLine()) != null) {
 					String url = lineTxt.replace(" ", "");
-					String path = "ys" + dateUtil.mdFormat() + "-" + lineSize;
-					String pathName = "C:\\Users\\Administrator\\Desktop\\" +
-							txtFileName.replace(".txt", "") + "\\" + path + "\\" + path;
-					open(url, pathName, lineSize, path);
+					String path = new StringBuilder("ys").append(dateUtil.mdFormat()).append("-").append(lineSize).toString();
+					String pathName = new StringBuilder("C:\\Users\\Administrator\\Desktop\\").append(txtFileName.replace(".txt", "")).
+							append("\\").append(path).append("\\").append(path).toString();
+					this.open(url, pathName, lineSize, path);
 					lineSize++;
 				}
 				br.close();
@@ -52,217 +52,30 @@ public class GetPageSourceBiz {
 		} catch (Exception e) {
 			System.out.println("文件读取错误!");
 		}
-
-
 	}
 
+	/**
+	 * 主采集业务流程
+	 * @param url
+	 * @param filePath
+	 * @param lineSize
+	 * @param path
+	 * @throws Exception
+	 */
 	private void open(String url, String filePath, int lineSize, String path) throws Exception {
 
-		Set<String> imgUrls = new HashSet<String>();
-		List<String> colorList = new ArrayList<String>();
-		List<String> sizeList = new ArrayList<String>();
-		List<String> bulletPoint = new ArrayList<String>();
-		StringBuilder itemType = new StringBuilder();
-
+		// 创建连接
 		Connection connect = Jsoup.connect(url);
+		// 模拟连接头，如果不设置会被亚马逊当作爬虫拒绝访问，同时设置请求超时时间
 		Document doc = connect.userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:5.0) Gecko/20100101 Firefox/5.0")
 				.timeout(10 * 1000).get();
-		CommodityDTO commodityDTO = new CommodityDTO();
 		if (doc != null) {
 			System.out.println("进入Document！！！！");
-			// 尺寸集合
-			commodityDTO.setSizeList(sizeContainer(doc, sizeList));
-			//imgUrl集合
-			commodityDTO.setImgUrls(imgUrl(doc, imgUrls, filePath, path));
-			//金额获取
-			commodityDTO.setSalePrice(price(doc));
-			//获取颜色
-			commodityDTO.setColorList(colorList(doc, colorList));
-			List<String> itemAndGender = productName(doc);
-			commodityDTO.setItemName(itemAndGender.get(0));
-			commodityDTO.setGender(itemAndGender.get(1).replace(" ", ""));
-			commodityDTO.setSalePrice(salePrice(doc));
-			BigDecimal Magnification = new BigDecimal(1.4);
-			BigDecimal standardPrice = new BigDecimal(commodityDTO.getSalePrice());
-			standardPrice = standardPrice.multiply(Magnification).setScale(2, BigDecimal.ROUND_HALF_UP);
-			commodityDTO.setStandardPrice(Double.toString(standardPrice.doubleValue()));
-			commodityDTO.setListPrice(Double.toString(standardPrice.multiply(Magnification).setScale(2, BigDecimal.ROUND_HALF_UP).doubleValue()));
-			commodityDTO.setBulletPoint(bulletPointList(doc, bulletPoint));
-			commodityDTO.setItemType(itemType(doc, itemType));
-			commodityDTO.setLineSize(lineSize);
-			excelExportServlet = new ExcelExportBiz(commodityDTO);
-			excelExportServlet.exportExcel(commodityDTO, filePath);
-
+			//  根据不同类型商品反射调用不同的数据采集方法
+			String commodityType  = doc.select("span.nav-a-content").text().replaceAll(" ","");
+			BaseInstruct baseInstruct = baseInstructControl.getBaseInstructControl(commodityType);
+			baseInstruct.getPageSource(doc,filePath,lineSize,path);
 		}
 	}
-		private Set<String> imgUrl (Document doc, Set < String > imgUrls, String txtFilePath, String path){
 
-			imgUrls = imgSize1000(doc, imgUrls);
-			Iterator showIterator = imgUrls.iterator();
-			if (imgUrls.size() != 0 && !"".equals(imgUrls.size())) {
-				String imgUrlPath = txtFilePath + "-img" + "\\";
-				File files = new File(imgUrlPath);
-				if (!files.exists()) {
-					files.mkdirs();
-				}
-				int imgSize = 1;
-				while (showIterator.hasNext()) {
-					try {
-						imgDownload(imgUrlPath, showIterator.next().toString(), imgSize, path);
-						imgSize++;
-					} catch (UnsupportedEncodingException e) {
-						System.out.println("图片下载异常！！！");
-						e.printStackTrace();
-					}
-				}
-			}
-			return imgUrls;
-		}
-
-		private String price (Document doc){
-			return doc.select("span#priceblock_ourprice").text();
-		}
-
-		private static List<String> colorList (Document doc, List < String > colorList){
-
-			Elements colors = doc.select("img.imgSwatch");
-
-			for (int i = 0; i < colors.size(); i++) {
-
-				//颜色代码截取
-				String color = colors.get(i).attr("alt");
-				colorList.add(color);
-			}
-			return colorList;
-		}
-
-		private List<String> sizeContainer (Document doc, List < String > sizeList){
-
-			Elements sizeElements = doc.select("select.a-native-dropdown > option");
-
-			for (int i = 0; i < sizeElements.size(); i++) {
-
-				//尺寸代码截取
-				String size = sizeElements.get(i).attr("data-a-html-content");
-				if (size != null && !"".equals(size)) {
-					sizeList.add(size);
-				}
-			}
-			return sizeList;
-		}
-
-		private List<String> productName (Document doc){
-			List<String> itemAndGender = new ArrayList<String>(2);
-			Elements sizeElements = doc.select("SPAN#productTitle");
-
-			String item_name = sizeElements.text();
-			String[] itemList = item_name.split(" ");
-			StringBuilder item = new StringBuilder();
-			for (int i = 0; i < itemList.length; i++) {
-				if (i == 0) {
-					item.append("SP4U");
-				} else {
-					item.append(itemList[i]);
-				}
-				item.append(" ");
-			}
-			itemAndGender.add(item.toString());
-			itemAndGender.add(itemList[1]);
-			return itemAndGender;
-		}
-
-		private String salePrice (Document doc){
-
-			Elements sizeElements = doc.select("SPAN#priceblock_ourprice");
-
-			String item_name = sizeElements.text().replace("$", "");
-			String[] itemName = item_name.split("-");
-			return itemName[0].replace(" ", "");
-		}
-
-		private List<String> bulletPointList (Document doc, List < String > bulletPoint){
-
-			Elements sizeElements = doc.select("div#feature-bullets > ul > li");
-			for (int i = 0; i < sizeElements.size(); i++) {
-
-				//卖点代码截取
-				String size = sizeElements.get(i).text();
-				if (size != null && !"".equals(size)) {
-					bulletPoint.add(size);
-				}
-			}
-			return bulletPoint;
-		}
-
-		private String itemType (Document doc, StringBuilder itemType ){
-
-			Elements itemTypeElements = doc.select("SPAN.a-list-item > a");
-			for (int i = 0; i < itemTypeElements.size(); i++) {
-
-				String item_name = itemTypeElements.get(i).text();
-				if (!"".equals(item_name) && item_name != null) {
-					itemType.append(item_name.replaceAll(" ", ""));
-					if (i != (itemTypeElements.size() - 1) && !"".equals(itemTypeElements.get(i + 1).text()) && itemTypeElements.get(i + 1).text() != null) {
-						itemType.append("-");
-					}
-				}
-			}
-			return itemType.toString();
-		}
-
-		private void imgDownload (String filePath, String imgUrl,int imgSize, String path)throws
-		UnsupportedEncodingException {
-
-
-			//图片url中的前面部分：例如"http://images.csdn.net/"
-			String beforeUrl = imgUrl.substring(0, imgUrl.lastIndexOf("/") + 1);
-			//图片url中的后面部分：例如“20150529/PP6A7429_副本1.jpg”
-			String fileName = imgUrl.substring(imgUrl.lastIndexOf("/") + 1);
-			//编码之后的fileName，空格会变成字符"+"
-			String newFileName = URLEncoder.encode(fileName, "UTF-8");
-			//把编码之后的fileName中的字符"+"，替换为UTF-8中的空格表示："%20"
-			newFileName = newFileName.replaceAll("\\+", "\\%20");
-			//编码之后的url
-			imgUrl = beforeUrl + newFileName;
-			String suffix = imgUrl.substring(imgUrl.lastIndexOf("."));
-			try {
-				//创建文件目录
-				File files = new File(filePath);
-				if (!files.exists()) {
-					files.mkdirs();
-				}
-				//获取下载地址
-				URL url = new URL(imgUrl);
-				//链接网络地址
-				HttpURLConnection connection = (HttpURLConnection) url.openConnection();
-				//获取链接的输出流
-				InputStream is = connection.getInputStream();
-				//创建文件，fileName为编码之前的文件名
-				File file = new File(filePath + path + "-" + imgSize + suffix);
-				//根据输入流写入文件
-				FileOutputStream out = new FileOutputStream(file);
-				int i = 0;
-				while ((i = is.read()) != -1) {
-					out.write(i);
-				}
-				out.close();
-				is.close();
-			} catch (Exception e) {
-				e.printStackTrace();
-			}
-
-		}
-		private Set<String> imgSize1000 (Document doc, Set < String > imgUrls ){
-			Pattern patten = Pattern.compile("https://([\\w-]+\\.)+[\\w-]+(/[\\w- ./?%&=#]*)1\\d+_.jpg");
-			Matcher m = patten.matcher(doc.toString());
-			for (int i = 0; i < 100; i++) {
-
-				if (m.find()) {
-					imgUrls.add(m.group());
-				} else {
-					break;
-				}
-			}
-			return imgUrls;
-		}
 }
