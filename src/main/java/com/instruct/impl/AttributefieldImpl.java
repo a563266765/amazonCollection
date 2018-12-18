@@ -20,6 +20,7 @@ import java.util.regex.Matcher;
 import java.util.regex.Pattern;
 
 /**
+ * 爬取商品数据各字段信息功能实现类
  * projectName : demo
  *
  * @author yangshuai

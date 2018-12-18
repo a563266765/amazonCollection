@@ -15,8 +15,12 @@ public enum ServiceExceptionEnum {
     /**
      * 商品类型参数有误
      */
-    COMMODITY_TYPE_ERROR("COMMODITY_TYPE_ERROR","商品类型参数有误");
+    COMMODITY_TYPE_ERROR("COMMODITY_TYPE_ERROR","商品类型参数有误"),
 
+    /**
+     * bulletPointSize
+     */
+    BULLET_POINT_ERROR("BULLET_POINT_ERROR","商品描述取值有误");
     private String code;
     private String message;
 

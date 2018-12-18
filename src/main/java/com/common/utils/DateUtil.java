@@ -6,32 +6,32 @@ import java.util.Calendar;
 public class DateUtil {
 
 
-    public String ymdFormat(){
+    public static String ymdFormat(){
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyyMMdd");
         return simpleDateFormat.format(System.currentTimeMillis());
     }
 
-    public String hmsFormat(){
+    public static String hmsFormat(){
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("HHmmss");
         return simpleDateFormat.format(System.currentTimeMillis());
     }
 
-    public String mdFormat(){
+    public static String mdFormat(){
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("MMdd");
         return simpleDateFormat.format(System.currentTimeMillis());
     }
 
-    public String yFormat(){
+    public static String yFormat(){
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy");
         return simpleDateFormat.format(System.currentTimeMillis());
     }
 
-    public String y_M_dFormat(){
+    public static String y_M_dFormat(){
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         return simpleDateFormat.format(System.currentTimeMillis());
     }
 
-    public String dateYearsAlgorithm(int yearNum){
+    public static String dateYearsAlgorithm(int yearNum){
 
         SimpleDateFormat simpleDateFormat = new SimpleDateFormat("yyyy-MM-dd");
         Calendar c = Calendar.getInstance();
