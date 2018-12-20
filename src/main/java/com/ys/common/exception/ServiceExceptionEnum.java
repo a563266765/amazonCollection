@@ -1,7 +1,6 @@
-package com.common.exception;
+package com.ys.common.exception;
 
 import lombok.Getter;
-import org.apache.commons.lang.StringUtils;
 
 /**
  * projectName : demo
@@ -18,9 +17,15 @@ public enum ServiceExceptionEnum {
     COMMODITY_TYPE_ERROR("COMMODITY_TYPE_ERROR","商品类型参数有误"),
 
     /**
-     * bulletPointSize
+     * 商品描述取值有误
      */
-    BULLET_POINT_ERROR("BULLET_POINT_ERROR","商品描述取值有误");
+    BULLET_POINT_ERROR("BULLET_POINT_ERROR","商品描述取值有误"),
+
+    /**
+     * 不支持采集的商品类型
+     */
+    UNSUPPORTED_ITEM_TYPE("UNSUPPORTED_ITEM_TYPE","不支持采集的商品类型");
+
     private String code;
     private String message;
 

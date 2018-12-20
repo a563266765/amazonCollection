@@ -1,29 +1,35 @@
-package com.biz;
+package com.ys.biz;
 
-import com.common.utils.DateUtil;
-import com.control.BaseInstructControl;
-import com.instruct.BaseInstruct;
+import com.ys.common.exception.ServiceException;
+import com.ys.common.exception.ServiceExceptionEnum;
+import com.ys.common.utils.DateUtil;
+import com.ys.control.BaseInstructControl;
+import com.ys.instruct.BaseInstruct;
+import lombok.extern.slf4j.Slf4j;
+import org.apache.commons.lang.StringUtils;
 import org.jsoup.Connection;
 import org.jsoup.Jsoup;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
+import org.springframework.stereotype.Component;
 import org.springframework.stereotype.Service;
 
+import javax.annotation.PostConstruct;
 import java.io.BufferedReader;
 import java.io.File;
 import java.io.FileInputStream;
 import java.io.InputStreamReader;
 
 @Service
+@Slf4j
 public class GetPageSourceBiz {
-
-	@Autowired
-	private CommodityInstruct excelExportServlet;
 
 	@Autowired
 	private BaseInstructControl baseInstructControl;
 
+
 	public GetPageSourceBiz(){}
+	@PostConstruct
 	public void pageSource() {
 
 		try {
@@ -31,7 +37,6 @@ public class GetPageSourceBiz {
 			String txtFileName = "kangkang.txt";
 			String filePath = headPath + txtFileName;
 			File file = new File(filePath);
-			DateUtil dateUtil = new DateUtil();
 			if (file.isFile() && file.exists()) {
 				InputStreamReader isr = new InputStreamReader(new FileInputStream(file), "utf-8");
 				BufferedReader br = new BufferedReader(isr);
@@ -39,18 +44,21 @@ public class GetPageSourceBiz {
 				int lineSize = 1;
 				while ((lineTxt = br.readLine()) != null) {
 					String url = lineTxt.replace(" ", "");
-					String path = new StringBuilder("ys").append(dateUtil.mdFormat()).append("-").append(lineSize).toString();
-					String pathName = new StringBuilder("C:\\Users\\Administrator\\Desktop\\").append(txtFileName.replace(".txt", "")).
-							append("\\").append(path).append("\\").append(path).toString();
-					this.open(url, pathName, lineSize, path);
+					StringBuilder path = new StringBuilder("ys").append(DateUtil.mdFormat()).append("-").append(lineSize);
+					log.info("path路径 ：" + path);
+					StringBuilder pathName = new StringBuilder("C:\\Users\\Administrator\\Desktop\\").append(txtFileName.replace(".txt", "")).
+							append("\\").append(path).append("\\").append(path);
+					log.info("pathName ：" + pathName);
+					this.open(url, pathName.toString(), lineSize, path.toString());
 					lineSize++;
 				}
 				br.close();
 			} else {
-				System.out.println("文件不存在!");
+				log.info("文件不存在!");
 			}
 		} catch (Exception e) {
-			System.out.println("文件读取错误!");
+			e.printStackTrace();
+			log.info("文件读取错误!", e);
 		}
 	}
 
@@ -70,10 +78,16 @@ public class GetPageSourceBiz {
 		Document doc = connect.userAgent("Mozilla/5.0 (Windows NT 6.1; WOW64; rv:5.0) Gecko/20100101 Firefox/5.0")
 				.timeout(10 * 1000).get();
 		if (doc != null) {
-			System.out.println("进入Document！！！！");
+			log.info("进入Document！！！！");
 			//  根据不同类型商品反射调用不同的数据采集方法
-			String commodityType  = doc.select("span.nav-a-content").text().replaceAll(" ","");
+			String commodityType  = doc.select("span.a-list-item").text().replaceAll(" ","");
+			commodityType = commodityType.split("›")[0];
+			if (StringUtils.isBlank(commodityType)){
+				log.info("商品类型为空 ",new ServiceException(ServiceExceptionEnum.UNSUPPORTED_ITEM_TYPE));
+			}
+			log.info("种类：" + commodityType);
 			BaseInstruct baseInstruct = baseInstructControl.getBaseInstructControl(commodityType);
+			log.info("baseInstruct = " + baseInstruct);
 			baseInstruct.getPageSource(doc,filePath,lineSize,path);
 		}
 	}

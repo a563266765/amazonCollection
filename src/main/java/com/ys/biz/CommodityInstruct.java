@@ -1,11 +1,11 @@
-package com.biz;
+package com.ys.biz;
 
-import com.common.exception.ServiceException;
-import com.common.exception.ServiceExceptionEnum;
-import com.common.utils.DateUtil;
-import com.dto.CommodityDTO;
-import com.instruct.BaseInstruct;
-import com.instruct.impl.AttributefieldImpl;
+import com.ys.common.exception.ServiceException;
+import com.ys.common.exception.ServiceExceptionEnum;
+import com.ys.common.utils.DateUtil;
+import com.ys.dto.CommodityDTO;
+import com.ys.instruct.BaseInstruct;
+import com.ys.instruct.impl.AttributefieldImpl;
 import jxl.Cell;
 import jxl.Sheet;
 import jxl.Workbook;
@@ -13,6 +13,7 @@ import jxl.write.Label;
 import jxl.write.WritableSheet;
 import jxl.write.WritableWorkbook;
 import jxl.write.WriteException;
+import lombok.extern.slf4j.Slf4j;
 import org.jsoup.nodes.Document;
 import org.springframework.beans.factory.annotation.Autowired;
 import org.springframework.stereotype.Service;
@@ -26,6 +27,7 @@ import java.util.List;
 import java.util.Set;
 
 @Service
+@Slf4j
 public class CommodityInstruct implements BaseInstruct {
 
     /**
@@ -41,9 +43,11 @@ public class CommodityInstruct implements BaseInstruct {
     @Override
     public void getPageSource(Document doc, String filePath, int lineSize, String path){
 
+        log.info("进入服装类数据采集实现类！！！");
         CommodityDTO commodityDTO = new CommodityDTO();
         // 爬取商品页面各字段数据
         commodityDTO = this.getCrawlData(commodityDTO,doc,filePath,lineSize,path);
+        log.info("服装类DTO：",commodityDTO);
         WritableWorkbook book = null;
             try {
                 File testExcel = new File("C:\\Users\\Administrator\\Desktop\\amazon\\ys0727.xls");
@@ -72,7 +76,7 @@ public class CommodityInstruct implements BaseInstruct {
 
                 int row = 0;
                 // 这里对颜色集合和尺寸集合的校验原因为亚马逊商品有可能出现无颜色选项或者无尺寸选项的情况，全部考虑到位包含上颜色尺寸都没有的情况
-                if(commodityDTO.getColorList().size() !=0 && commodityDTO.getColorList() != null && commodityDTO.getSizeList().size()!= 0 && commodityDTO.getSizeList() !=null) {
+                if(commodityDTO.getColorList().size() != 0 && commodityDTO.getColorList() != null && commodityDTO.getSizeList().size()!= 0 && commodityDTO.getSizeList() != null) {
 
                     // 以颜色和大小为维度创建所有同颜色不同大小和同大小不同颜色的子类
                     for (int i = 0; i < commodityDTO.getColorList().size(); i++) {
@@ -112,7 +116,7 @@ public class CommodityInstruct implements BaseInstruct {
                             this.getOtherReuseField(row, ws, commodityDTO);
                             row++;
                         }
-                }else if(commodityDTO.getSizeList().size()!= 0 && commodityDTO.getSizeList() !=null){
+                }else if(commodityDTO.getSizeList().size()!= 0 && commodityDTO.getSizeList() != null){
                     // 上一个条件判断已经校验了颜色集合和尺寸集合，会进到这里说明了颜色集合为null
                         for (int j = 0; j < commodityDTO.getSizeList().size(); j++) {
 
@@ -149,12 +153,12 @@ public class CommodityInstruct implements BaseInstruct {
                     }
                 } catch (IOException | WriteException e) {
                     e.printStackTrace();
+                    log.info("服装类采集信息异常，异常信息：",e);
                 }
 
             }
 
     }
-
 
     private void parentInformation(int row,WritableSheet ws) throws WriteException {
 
@@ -191,7 +195,6 @@ public class CommodityInstruct implements BaseInstruct {
     }
 
     private void childInformation(int row,WritableSheet ws,CommodityDTO commodityDTO,int i, int j) throws WriteException {
-
 
         Label external_product_id_type = new Label(3, 3 + row, "UPC");
         Label fulfillment_latency = new Label(12, 3 + row, "8");

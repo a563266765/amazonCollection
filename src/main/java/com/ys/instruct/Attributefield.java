@@ -1,8 +1,7 @@
-package com.instruct;
+package com.ys.instruct;
 
 import org.jsoup.nodes.Document;
 
-import java.io.UnsupportedEncodingException;
 import java.util.List;
 import java.util.Set;
 

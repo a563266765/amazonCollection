@@ -1,7 +1,7 @@
-package com.common.enums;
+package com.ys.common.enums;
 
-import com.common.exception.ServiceException;
-import com.common.exception.ServiceExceptionEnum;
+import com.ys.common.exception.ServiceException;
+import com.ys.common.exception.ServiceExceptionEnum;
 import lombok.Getter;
 
 /**
@@ -14,10 +14,10 @@ import lombok.Getter;
 public enum CommodityTypeEnum {
 
     /** 服装类 */
-    CLOTHING("CLOTHING","CommodityBiz"),
+    CLOTHING("Clothing,Shoes&Jewelry","服装类"),
 
     /** 宠物用品 */
-    PET_SUPPLIES("PETSUPPLIES","PetSuppliesBiz");
+    PET_SUPPLIES("PETSUPPLIES","宠物用品");
 
     private String code;
 

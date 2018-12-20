@@ -1,6 +1,6 @@
-package com.dto;
+package com.ys.dto;
 
-import com.common.utils.DateUtil;
+import com.ys.common.utils.DateUtil;
 import lombok.Getter;
 import lombok.Setter;
 import lombok.ToString;

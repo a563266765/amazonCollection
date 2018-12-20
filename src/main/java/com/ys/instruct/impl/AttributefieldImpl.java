@@ -1,9 +1,10 @@
-package com.instruct.impl;
+package com.ys.instruct.impl;
 
-import com.instruct.Attributefield;
+import com.ys.instruct.Attributefield;
 import org.apache.commons.lang.StringUtils;
 import org.jsoup.nodes.Document;
 import org.jsoup.select.Elements;
+import org.springframework.stereotype.Component;
 
 import java.io.File;
 import java.io.FileOutputStream;
@@ -26,6 +27,7 @@ import java.util.regex.Pattern;
  * @author yangshuai
  * @version ID : V1.0 , 2018/12/1718:48
  */
+@Component
 public class AttributefieldImpl implements Attributefield {
 
     @Override
